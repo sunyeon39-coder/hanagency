@@ -442,6 +442,9 @@ button.blue:hover{background:rgba(74,163,255,.24)}
   overflow:hidden;
   background: rgba(255,255,255,.04);
   user-select:none;
+
+  /* ✅ 모바일 드래그가 스크롤로 먹히는 문제 방지 */
+  touch-action: none;
 }
 
 /* 워터마크 */
@@ -534,6 +537,9 @@ button.blue:hover{background:rgba(74,163,255,.24)}
   align-items:center;
   justify-content:center;
   z-index:5;
+
+  /* ✅ 리사이즈도 터치 스크롤로 안 먹게 */
+  touch-action: none;
 }
 .resize-handle::before{
   content:"";
@@ -687,4 +693,3 @@ input[type="color"]{
   #boardsBar{min-height:54px}
   .btab .actions{opacity:1; pointer-events:auto;}
 }
-
