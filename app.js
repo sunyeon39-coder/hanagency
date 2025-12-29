@@ -319,11 +319,28 @@ function initIfEmpty(){
    UI bindings
 ========================================================= */
 function bindUI(){
-  $("#btnAddWaiting").addEventListener("click", addWaitingFromInput);
+  // ✅ iOS Safari에서 click/Enter가 간헐적으로 씹히는 케이스가 있어
+  // click + touchend(=tap) 둘 다 바인딩하고, 중복 실행은 가드한다.
+  const btnAdd = $("#btnAddWaiting");
+  let lastAddTapAt = 0;
+  const safeAddWaiting = ()=>{
+    const t = Date.now();
+    // 450ms 이내 중복( touchend 후 click ) 방지
+    if (t - lastAddTapAt < 450) return;
+    lastAddTapAt = t;
+    addWaitingFromInput();
+  };
+
+  btnAdd.addEventListener("click", safeAddWaiting);
+  btnAdd.addEventListener("touchend", (e)=>{
+    e.preventDefault();
+    safeAddWaiting();
+  }, { passive:false });
+
   $("#nameInput").addEventListener("keydown", (e)=>{
     if (e.key === "Enter"){
       e.preventDefault();
-      addWaitingFromInput();
+      safeAddWaiting();
     }
   });
 
@@ -378,6 +395,26 @@ function bindUI(){
 
   // TODO: 나머지 버튼들(정렬/박스추가/컬러/텍스트/삭제) 기존 로직 그대로 아래에 있다고 가정
 }
+
+/* =========================================================
+   ✅ Toolbar height → CSS var
+   - toolbar가 모바일에서 줄바꿈되면 기존의 62px 가정이 깨져서
+     화면이 겹치거나 '큰 빈 패널'처럼 보일 수 있음
+========================================================= */
+function syncToolbarHeight(){
+  const tb = document.getElementById("toolbar");
+  if (!tb) return;
+  const h = Math.ceil(tb.getBoundingClientRect().height);
+  document.documentElement.style.setProperty("--toolbarH", `${h}px`);
+}
+
+window.addEventListener("resize", ()=>{
+  syncToolbarHeight();
+}, { passive:true });
+
+// 최초 1회 + 폰트/레이아웃 안정화 이후 한 번 더
+setTimeout(syncToolbarHeight, 0);
+setTimeout(syncToolbarHeight, 300);
 
 /* =========================================================
    List collapse
@@ -864,11 +901,29 @@ function runSearchAndFocusNext(){
 }
 
 /* =========================================================
+   ✅ Layout fix: toolbar 높이(줄바꿈 포함)를 CSS 변수로 반영
+   - 모바일에서 상단 UI가 겹치거나 "큰 빈 패널"처럼 보이는 현상 방지
+========================================================= */
+function updateToolbarHeight(){
+  const tb = document.getElementById("toolbar");
+  if (!tb) return;
+  const h = Math.ceil(tb.getBoundingClientRect().height);
+  document.documentElement.style.setProperty("--toolbarH", `${h}px`);
+}
+window.addEventListener("resize", ()=>{
+  // iOS 주소창 변화 등으로 연속 resize가 많이 발생할 수 있어 살짝 디바운스
+  clearTimeout(updateToolbarHeight._t);
+  updateToolbarHeight._t = setTimeout(updateToolbarHeight, 60);
+});
+document.addEventListener("DOMContentLoaded", updateToolbarHeight);
+
+/* =========================================================
    Boot
 ========================================================= */
 initIfEmpty();
 bindUI();
 renderAll();
 applyGridUI();
+updateToolbarHeight();
 Firestore.start();
 startStateChangeDetector();
