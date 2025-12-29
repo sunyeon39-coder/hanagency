@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Box Board v1.4.1 (Snap+Search)</title>
+  <title>Box Board v1.4.2 (Pointer Drag Fix)</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
@@ -31,7 +31,7 @@
       <span class="hint">Tab: 목록 접기/펼치기</span>
     </div>
 
-    <!-- ✅ NEW: Snap + Search -->
+    <!-- ✅ Snap + Search -->
     <div class="toolbar-group">
       <button class="blue" id="btnSnapToggle" title="Alt 누르면 스냅 잠시 해제">스냅: ON</button>
       <span class="pill">Grid</span>
@@ -60,6 +60,7 @@
 
         <div class="header-right">
           <div class="sub" id="countsLabel">-</div>
+          <span id="syncLabel" style="margin-left:10px;font-size:12px;color:#a9b0d6;">로컬</span>
           <button class="blue" id="btnToggleList" title="목록 열기/닫기">목록 닫기</button>
         </div>
       </div>
@@ -141,6 +142,7 @@
         </div>
         <button id="closeTextModal">닫기</button>
       </div>
+
       <div class="mbody">
         <div class="form-grid">
           <div class="field">
@@ -206,6 +208,7 @@
           ✅ 박스에서 더블클릭해도 바로 편집창이 뜹니다.
         </div>
       </div>
+
       <div class="mfoot">
         <button id="btnTextReset">기본값</button>
         <button class="blue" id="btnTextApply">적용</button>
@@ -213,6 +216,23 @@
     </div>
   </div>
 
-  <script src="./app.js"></script>
+  <script>
+    // ✅ 실시간 동기화 설정 (PC ↔ 모바일)
+    window.BB_SYNC = {
+      enabled: true,
+      room: "default-room",
+      firebaseConfig: {
+        apiKey: "AIzaSyDXZM15ex4GNFdf2xjVOW-xopMHf_AMYGc",
+        authDomain: "box-board.firebaseapp.com",
+        projectId: "box-board",
+        storageBucket: "box-board.firebasestorage.app",
+        messagingSenderId: "336632241536",
+        appId: "1:336632241536:web:d7b57b91d91596dbf3b565",
+        measurementId: "G-7B9W7N9X9B"
+      }
+    };
+  </script>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
