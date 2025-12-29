@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Box Board v1.4.1 (Snap+Search)</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div id="toolbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <b>Box Board</b>
+        <div><span>스냅(그리드) + 검색(자동 전환/하이라이트)</span></div>
+      </div>
+    </div>
+
+    <div class="toolbar-group">
+      <input id="nameInput" type="text" placeholder="이름 입력 (Enter)" />
+      <button class="primary" id="btnAddWaiting">대기 추가</button>
+      <span class="hint">Enter로도 추가</span>
+    </div>
+
+    <div class="toolbar-group">
+      <button class="blue" id="btnSortH">가로 정렬</button>
+      <button class="blue" id="btnSortV">세로 정렬</button>
+      <button id="btnAddBox">박스 추가</button>
+      <button class="danger" id="btnDeleteSelected">선택 박스 삭제</button>
+      <span class="hint">Tab: 목록 접기/펼치기</span>
+    </div>
+
+    <!-- ✅ NEW: Snap + Search -->
+    <div class="toolbar-group">
+      <button class="blue" id="btnSnapToggle" title="Alt 누르면 스냅 잠시 해제">스냅: ON</button>
+      <span class="pill">Grid</span>
+      <select id="gridSizeSelect">
+        <option value="8">8px</option>
+        <option value="10">10px</option>
+        <option value="12">12px</option>
+        <option value="16" selected>16px</option>
+        <option value="20">20px</option>
+        <option value="24">24px</option>
+      </select>
+
+      <input id="searchInput" type="text" placeholder="이름 검색 (Enter)" />
+      <button id="btnSearchNext">다음</button>
+      <span class="hint">배치된 사람: 보드 자동전환 + 박스 하이라이트</span>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="panel" id="listPanel">
+      <div class="panel-header">
+        <div>
+          <b>목록</b>
+          <div class="sub">대기 / 배치 / 박스(목록)</div>
+        </div>
+
+        <div class="header-right">
+          <div class="sub" id="countsLabel">-</div>
+          <button class="blue" id="btnToggleList" title="목록 열기/닫기">목록 닫기</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="waiting">대기</div>
+        <div class="tab" data-tab="assigned">배치</div>
+        <div class="tab" data-tab="boxes">박스(목록)</div>
+      </div>
+
+      <div class="tab-body" id="tab_waiting"></div>
+      <div class="tab-body" id="tab_assigned" style="display:none"></div>
+      <div class="tab-body" id="tab_boxes" style="display:none"></div>
+    </div>
+
+    <div class="panel" id="boardPanel">
+      <div id="expandHandle" title="목록 펼치기">
+        <div class="chev">›</div>
+        <div class="txt">목록</div>
+      </div>
+
+      <div class="panel-header">
+        <div>
+          <b>테이블 배치도</b>
+          <div class="sub">박스 드래그 이동 / Shift+클릭 멀티 선택 / 드래그 박스 선택 / 더블클릭 편집 / 좌석 더블클릭→대기</div>
+        </div>
+
+        <div class="header-right">
+          <div class="sub" id="countsLabelBoard" style="display:none">-</div>
+          <button class="blue" id="btnToggleListBoard" style="display:none" title="목록 열기">목록 열기</button>
+        </div>
+      </div>
+
+      <div id="boardsBar"></div>
+
+      <div id="boardTop">
+        <div class="controls">
+          <button id="zoomOut">-</button>
+          <span id="zoomLabel">Zoom 100%</span>
+          <button id="zoomIn">+</button>
+          <button id="zoomReset">Reset</button>
+          <span class="hint">휠: 확대/축소 (Ctrl/⌘ + 휠)</span>
+        </div>
+        <div class="controls">
+          <button id="btnColor">선택 박스 컬러</button>
+          <button class="blue" id="btnTextEdit">선택 박스 텍스트</button>
+        </div>
+      </div>
+
+      <div id="boardViewport">
+        <div id="selectionOverlay"><div id="selectionRect"></div></div>
+        <div id="boardCanvas"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Color modal -->
+  <div class="modal" id="colorModal">
+    <div class="box">
+      <div class="mhead">
+        <b>박스 컬러 선택</b>
+        <button id="closeColorModal">닫기</button>
+      </div>
+      <div class="mbody">
+        <div class="palette" id="palette"></div>
+        <div class="mini-hint">선택된 박스(여러 개 가능)에 컬러가 적용됩니다.</div>
+      </div>
+      <div class="mfoot"><button id="cancelColor">취소</button></div>
+    </div>
+  </div>
+
+  <!-- Text edit modal -->
+  <div class="modal" id="textModal">
+    <div class="box">
+      <div class="mhead">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <b>박스 텍스트 편집</b>
+          <div class="mini-hint" id="textModalTarget">선택된 박스에 적용됩니다.</div>
+        </div>
+        <button id="closeTextModal">닫기</button>
+      </div>
+      <div class="mbody">
+        <div class="form-grid">
+          <div class="field">
+            <div class="label">워터마크 타이틀(BOX 이름)</div>
+            <div class="row2">
+              <span class="pill">기본 크기(px)</span>
+              <div class="stepper">
+                <button class="btnStep blue" data-stepper="titleSize" data-dir="-">−</button>
+                <input class="num" id="f_titleSize" type="number" min="14" max="56" step="1" inputmode="numeric">
+                <button class="btnStep blue" data-stepper="titleSize" data-dir="+">+</button>
+              </div>
+              <span class="pill">색</span>
+              <input id="f_titleColor" type="color">
+            </div>
+            <div class="mini-hint">✅ 줌 70%↓: 자동으로 더 커지고 더 진해집니다.</div>
+          </div>
+
+          <div class="field">
+            <div class="label">우상단 타이머(00:00:00)</div>
+            <div class="row2">
+              <span class="pill">크기(px)</span>
+              <div class="stepper">
+                <button class="btnStep blue" data-stepper="headerTimeSize" data-dir="-">−</button>
+                <input class="num" id="f_headerTimeSize" type="number" min="10" max="22" step="1" inputmode="numeric">
+                <button class="btnStep blue" data-stepper="headerTimeSize" data-dir="+">+</button>
+              </div>
+              <span class="pill">색</span>
+              <input id="f_headerTimeColor" type="color">
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">이름(좌측 사람 이름)</div>
+            <div class="row2">
+              <span class="pill">크기(px)</span>
+              <div class="stepper">
+                <button class="btnStep blue" data-stepper="nameSize" data-dir="-">−</button>
+                <input class="num" id="f_nameSize" type="number" min="11" max="28" step="1" inputmode="numeric">
+                <button class="btnStep blue" data-stepper="nameSize" data-dir="+">+</button>
+              </div>
+              <span class="pill">색</span>
+              <input id="f_nameColor" type="color">
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">좌석 타이머(이름 옆 00:00:00)</div>
+            <div class="row2">
+              <span class="pill">크기(px)</span>
+              <div class="stepper">
+                <button class="btnStep blue" data-stepper="seatTimeSize" data-dir="-">−</button>
+                <input class="num" id="f_seatTimeSize" type="number" min="10" max="24" step="1" inputmode="numeric">
+                <button class="btnStep blue" data-stepper="seatTimeSize" data-dir="+">+</button>
+              </div>
+              <span class="pill">색</span>
+              <input id="f_seatTimeColor" type="color">
+            </div>
+          </div>
+        </div>
+
+        <div class="mini-hint">
+          ✅ 적용 대상은 “선택된 박스들” 입니다(Shift+클릭 멀티 선택 가능).<br/>
+          ✅ 박스에서 더블클릭해도 바로 편집창이 뜹니다.
+        </div>
+      </div>
+      <div class="mfoot">
+        <button id="btnTextReset">기본값</button>
+        <button class="blue" id="btnTextApply">적용</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
